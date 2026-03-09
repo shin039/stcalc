@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>倍率計算機</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Zen+Kaku+Gothic+New:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0f0f11;
+    --panel: #18181c;
+    --border: #2a2a30;
+    --accent-up: #4ade9a;
+    --accent-down: #f97b6b;
+    --text: #e8e8ec;
+    --muted: #666672;
+    --input-bg: #111115;
+  }
+
+  body {
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .container { width: 100%; max-width: 440px; }
+
+  .title {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 24px;
+    text-align: center;
+  }
+
+  .multiplier-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .multiplier-group { display: flex; flex-direction: column; gap: 6px; }
+
+  .multiplier-group label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+  }
+
+  .multiplier-group.up label   { color: rgba(74,222,154,0.6); }
+  .multiplier-group.down label { color: rgba(249,123,107,0.6); }
+
+  .multiplier-input-wrap {
+    display: flex;
+    align-items: center;
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    overflow: hidden;
+    transition: border-color 0.15s;
+  }
+
+  .multiplier-group.up   .multiplier-input-wrap:focus-within { border-color: rgba(74,222,154,0.3); }
+  .multiplier-group.down .multiplier-input-wrap:focus-within { border-color: rgba(249,123,107,0.3); }
+
+  .multiplier-prefix {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: var(--muted);
+    padding: 0 0 0 12px;
+    user-select: none;
+  }
+
+  input.multiplier {
+    width: 100%;
+    background: transparent;
+    border: none;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 16px;
+    font-weight: 500;
+    padding: 10px 10px 10px 4px;
+    outline: none;
+    -moz-appearance: textfield;
+  }
+
+  input.multiplier::-webkit-outer-spin-button,
+  input.multiplier::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+  .input-wrap { margin-bottom: 20px; }
+
+  .input-wrap label {
+    display: block;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    margin-bottom: 8px;
+    font-family: 'DM Mono', monospace;
+  }
+
+  input#numInput {
+    width: 100%;
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 30px;
+    font-weight: 500;
+    padding: 16px 20px;
+    border-radius: 8px;
+    outline: none;
+    transition: border-color 0.15s;
+    -moz-appearance: textfield;
+  }
+
+  input#numInput::-webkit-outer-spin-button,
+  input#numInput::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+  input#numInput:focus { border-color: #4a4a56; }
+  input#numInput::placeholder { color: #333338; }
+
+  .results {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .result-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 18px 14px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+
+  .result-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    border-radius: 10px 10px 0 0;
+    opacity: 0.8;
+  }
+
+  .result-card.up::before   { background: var(--accent-up); }
+  .result-card.down::before { background: var(--accent-down); }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+
+  .card-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .result-card.up .card-label   { color: var(--accent-up); }
+  .result-card.down .card-label { color: var(--accent-down); }
+
+  .badge {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 20px;
+    font-weight: 700;
+  }
+
+  .result-card.up   .badge { background: rgba(74,222,154,0.12);  color: var(--accent-up); }
+  .result-card.down .badge { background: rgba(249,123,107,0.12); color: var(--accent-down); }
+
+  .copy-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 5px;
+    padding: 3px 8px;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 0.05em;
+  }
+
+  .copy-btn:hover { border-color: #4a4a56; color: var(--text); }
+
+  .result-card.up   .copy-btn.copied { border-color: var(--accent-up);   color: var(--accent-up); }
+  .result-card.down .copy-btn.copied { border-color: var(--accent-down); color: var(--accent-down); }
+
+  .result-value {
+    font-family: 'DM Mono', monospace;
+    font-size: 24px;
+    font-weight: 500;
+    line-height: 1;
+    word-break: break-all;
+    min-height: 30px;
+    transition: all 0.15s;
+  }
+
+  .result-card.up   .result-value { color: var(--accent-up); }
+  .result-card.down .result-value { color: var(--accent-down); }
+  .result-value.empty { color: var(--border); font-size: 20px; }
+
+  .diff {
+    margin-top: 8px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+  }
+
+  .result-card.up   .diff { color: rgba(74,222,154,0.45); }
+  .result-card.down .diff { color: rgba(249,123,107,0.45); }
+
+  .footer {
+    margin-top: 18px;
+    text-align: center;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: #2a2a32;
+    letter-spacing: 0.1em;
+  }
+
+  @keyframes pop {
+    0%   { transform: scale(0.97); }
+    50%  { transform: scale(1.03); }
+    100% { transform: scale(1); }
+  }
+  .pop { animation: pop 0.16s ease; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <p class="title">Multiplier Calculator</p>
+
+  <div class="multiplier-row">
+    <div class="multiplier-group up">
+      <label>上側の倍率</label>
+      <div class="multiplier-input-wrap">
+        <span class="multiplier-prefix">×</span>
+        <input class="multiplier" id="multUp" type="number" value="1.1" step="0.01">
+      </div>
+    </div>
+    <div class="multiplier-group down">
+      <label>下側の倍率</label>
+      <div class="multiplier-input-wrap">
+        <span class="multiplier-prefix">×</span>
+        <input class="multiplier" id="multDown" type="number" value="0.9" step="0.01">
+      </div>
+    </div>
+  </div>
+
+  <div class="input-wrap">
+    <label>INPUT VALUE</label>
+    <input type="number" id="numInput" placeholder="0" autofocus>
+  </div>
+
+  <div class="results">
+    <div class="result-card up">
+      <div class="card-header">
+        <div class="card-label">
+          <span id="labelUp">×1.1</span>
+          <span class="badge" id="badgeUp">+10%</span>
+        </div>
+        <button class="copy-btn" id="copyUp">COPY</button>
+      </div>
+      <div class="result-value empty" id="valUp">—</div>
+      <div class="diff" id="diffUp"></div>
+    </div>
+    <div class="result-card down">
+      <div class="card-header">
+        <div class="card-label">
+          <span id="labelDown">×0.9</span>
+          <span class="badge" id="badgeDown">−10%</span>
+        </div>
+        <button class="copy-btn" id="copyDown">COPY</button>
+      </div>
+      <div class="result-value empty" id="valDown">—</div>
+      <div class="diff" id="diffDown"></div>
+    </div>
+  </div>
+
+  <p class="footer">入力するたびに即時反映 — 倍率も自由に変更可</p>
+</div>
+
+<script>
+  const numInput  = document.getElementById('numInput');
+  const multUp    = document.getElementById('multUp');
+  const multDown  = document.getElementById('multDown');
+  const valUp     = document.getElementById('valUp');
+  const valDown   = document.getElementById('valDown');
+  const diffUp    = document.getElementById('diffUp');
+  const diffDown  = document.getElementById('diffDown');
+  const labelUp   = document.getElementById('labelUp');
+  const labelDown = document.getElementById('labelDown');
+  const badgeUp   = document.getElementById('badgeUp');
+  const badgeDown = document.getElementById('badgeDown');
+  const copyUpBtn = document.getElementById('copyUp');
+  const copyDnBtn = document.getElementById('copyDown');
+
+  let currentUp = null;
+  let currentDown = null;
+
+  function fmt(n) {
+    return parseFloat(n.toPrecision(10)).toString();
+  }
+
+  function pctStr(mult) {
+    const diff = (mult - 1) * 100;
+    const rounded = parseFloat(diff.toPrecision(6));
+    return diff >= 0 ? `+${rounded}%` : `${rounded}%`;
+  }
+
+  function pop(el) {
+    el.classList.remove('pop');
+    void el.offsetWidth;
+    el.classList.add('pop');
+  }
+
+  function calc() {
+    const mUp = parseFloat(multUp.value);
+    const mDn = parseFloat(multDown.value);
+    const raw = numInput.value;
+
+    labelUp.textContent   = isNaN(mUp) ? '×?' : `×${mUp}`;
+    labelDown.textContent = isNaN(mDn) ? '×?' : `×${mDn}`;
+    badgeUp.textContent   = isNaN(mUp) ? '?' : pctStr(mUp);
+    badgeDown.textContent = isNaN(mDn) ? '?' : pctStr(mDn);
+
+    if (raw === '' || isNaN(parseFloat(raw))) {
+      valUp.textContent    = '—';
+      valDown.textContent  = '—';
+      valUp.className      = 'result-value empty';
+      valDown.className    = 'result-value empty';
+      diffUp.textContent   = '';
+      diffDown.textContent = '';
+      currentUp = null;
+      currentDown = null;
+      return;
+    }
+
+    const n = parseFloat(raw);
+
+    if (!isNaN(mUp)) {
+      const up = n * mUp;
+      currentUp = fmt(up);
+      valUp.textContent  = currentUp;
+      valUp.className    = 'result-value';
+      diffUp.textContent = `差分 ${up >= n ? '+' : ''}${fmt(up - n)}`;
+      pop(valUp);
+    }
+
+    if (!isNaN(mDn)) {
+      const dn = n * mDn;
+      currentDown = fmt(dn);
+      valDown.textContent  = currentDown;
+      valDown.className    = 'result-value';
+      diffDown.textContent = `差分 ${dn >= n ? '+' : ''}${fmt(dn - n)}`;
+      pop(valDown);
+    }
+  }
+
+  function doCopy(val, btn) {
+    if (val === null) return;
+    const write = () => {
+      btn.textContent = 'COPIED!';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = 'COPY'; btn.classList.remove('copied'); }, 1500);
+    };
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(val).then(write).catch(() => {
+        const ta = document.createElement('textarea');
+        ta.value = val; document.body.appendChild(ta); ta.select();
+        document.execCommand('copy'); document.body.removeChild(ta); write();
+      });
+    } else {
+      const ta = document.createElement('textarea');
+      ta.value = val; document.body.appendChild(ta); ta.select();
+      document.execCommand('copy'); document.body.removeChild(ta); write();
+    }
+  }
+
+  copyUpBtn.addEventListener('click', () => doCopy(currentUp,   copyUpBtn));
+  copyDnBtn.addEventListener('click', () => doCopy(currentDown, copyDnBtn));
+
+  numInput.addEventListener('input', calc);
+  multUp.addEventListener('input',   calc);
+  multDown.addEventListener('input', calc);
+</script>
+</body>
+</html>
