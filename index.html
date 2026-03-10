@@ -12,8 +12,8 @@
     --bg: #0f0f11;
     --panel: #18181c;
     --border: #2a2a30;
-    --accent-up: #4ade9a;
-    --accent-down: #f97b6b;
+    --accent-up: #ff4444;
+    --accent-down: #4ade9a;
     --text: #e8e8ec;
     --muted: #666672;
     --input-bg: #111115;
@@ -58,8 +58,8 @@
     color: var(--muted);
   }
 
-  .multiplier-group.up label   { color: rgba(74,222,154,0.6); }
-  .multiplier-group.down label { color: rgba(249,123,107,0.6); }
+  .multiplier-group.up label   { color: rgba(255,68,68,0.6); }
+  .multiplier-group.down label { color: rgba(74,222,154,0.6); }
 
   .multiplier-input-wrap {
     display: flex;
@@ -71,8 +71,8 @@
     transition: border-color 0.15s;
   }
 
-  .multiplier-group.up   .multiplier-input-wrap:focus-within { border-color: rgba(74,222,154,0.3); }
-  .multiplier-group.down .multiplier-input-wrap:focus-within { border-color: rgba(249,123,107,0.3); }
+  .multiplier-group.up   .multiplier-input-wrap:focus-within { border-color: rgba(255,68,68,0.3); }
+  .multiplier-group.down .multiplier-input-wrap:focus-within { border-color: rgba(74,222,154,0.3); }
 
   .multiplier-prefix {
     font-family: 'DM Mono', monospace;
@@ -184,8 +184,8 @@
     font-weight: 700;
   }
 
-  .result-card.up   .badge { background: rgba(74,222,154,0.12);  color: var(--accent-up); }
-  .result-card.down .badge { background: rgba(249,123,107,0.12); color: var(--accent-down); }
+  .result-card.up   .badge { background: rgba(255,68,68,0.12); color: var(--accent-up); }
+  .result-card.down .badge { background: rgba(74,222,154,0.12);  color: var(--accent-down); }
 
   .copy-btn {
     background: none;
@@ -225,8 +225,8 @@
     font-size: 11px;
   }
 
-  .result-card.up   .diff { color: rgba(74,222,154,0.45); }
-  .result-card.down .diff { color: rgba(249,123,107,0.45); }
+  .result-card.up   .diff { color: rgba(255,68,68,0.45); }
+  .result-card.down .diff { color: rgba(74,222,154,0.45); }
 
   .footer {
     margin-top: 18px;
@@ -322,6 +322,16 @@
     return parseFloat(n.toPrecision(10)).toString();
   }
 
+  function fmtDisplay(n) {
+    const str = fmt(n);
+    const neg = str.startsWith('-');
+    const abs = neg ? str.slice(1) : str;
+    const [intPart, decPart] = abs.split('.');
+    const intFormatted = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    const formatted = decPart !== undefined ? `${intFormatted}.${decPart}` : intFormatted;
+    return neg ? `-${formatted}` : formatted;
+  }
+
   function pctStr(mult) {
     const diff = (mult - 1) * 100;
     const rounded = parseFloat(diff.toPrecision(6));
@@ -361,18 +371,18 @@
     if (!isNaN(mUp)) {
       const up = n * mUp;
       currentUp = fmt(up);
-      valUp.textContent  = currentUp;
+      valUp.textContent  = fmtDisplay(up);
       valUp.className    = 'result-value';
-      diffUp.textContent = `差分 ${up >= n ? '+' : ''}${fmt(up - n)}`;
+      diffUp.textContent = `差分 ${up >= n ? '+' : ''}${fmtDisplay(up - n)}`;
       pop(valUp);
     }
 
     if (!isNaN(mDn)) {
       const dn = n * mDn;
       currentDown = fmt(dn);
-      valDown.textContent  = currentDown;
+      valDown.textContent  = fmtDisplay(dn);
       valDown.className    = 'result-value';
-      diffDown.textContent = `差分 ${dn >= n ? '+' : ''}${fmt(dn - n)}`;
+      diffDown.textContent = `差分 ${dn >= n ? '+' : ''}${fmtDisplay(dn - n)}`;
       pop(valDown);
     }
   }
@@ -403,6 +413,15 @@
   numInput.addEventListener('input', calc);
   multUp.addEventListener('input',   calc);
   multDown.addEventListener('input', calc);
+
+  document.addEventListener('keydown', (e) => {
+    if (e.ctrlKey && (e.key === 'l' || e.key === 'u')) {
+      e.preventDefault();
+      numInput.value = '';
+      calc();
+      numInput.focus();
+    }
+  });
 </script>
 </body>
 </html>
